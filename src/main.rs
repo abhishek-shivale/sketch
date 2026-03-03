@@ -1,40 +1,46 @@
 use axum::{
     Router,
-    extract::ws::{WebSocket, WebSocketUpgrade},
-    response::{IntoResponse, Response},
-    routing::any,
+    extract::{
+        WebSocketUpgrade,
+        ws::{Message, WebSocket},
+    },
+    response::Response, routing::any,
 };
-use tokio::runtime::Handle;
+use futures_util::{
+    StreamExt,
+    stream::{SplitSink, SplitStream},
+};
+use tokio;
 use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new().route("/ws", any(handler))
+    let app = Router::new()
+        .route("/ws", any(handler))
         .fallback_service(ServeDir::new("public").append_index_html_on_directories(true));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+        .await
+        .unwrap();
 
-    println!("Running on http://localhost:3000");
-
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app).await.unwrap()
 }
 
-async fn handler(ws: WebSocketUpgrade) -> Response {
-    ws.on_upgrade(handle_socket)
+async fn handler(socket: WebSocketUpgrade) -> Response {
+    socket.on_upgrade(handel_socket)
 }
 
-async fn handle_socket(mut socket: WebSocket) {
-    while let Some(msg) = socket.recv().await {
-        let msg = if let Ok(msg) = msg {
-            msg
-        } else {
-            // client disconnected
-            return;
-        };
+async fn handel_socket(socket: WebSocket) {
+    let (sender, receiver) = socket.split();
 
-        if socket.send(msg).await.is_err() {
-            // client disconnected
-            return;
-        }
-    }
+    tokio::spawn(write(sender));
+    tokio::spawn(read(receiver));
+}
+
+async fn read(receiver: SplitStream<WebSocket>) {
+    // ...
+}
+
+async fn write(sender: SplitSink<WebSocket, Message>) {
+    // ...
 }
