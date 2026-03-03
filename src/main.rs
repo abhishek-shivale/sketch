@@ -12,6 +12,10 @@ use futures_util::{
 };
 use tokio;
 use tower_http::services::ServeDir;
+mod room;
+mod utils;
+use crate::room::read;
+use crate::room::write;
 
 #[tokio::main]
 async fn main() {
@@ -35,12 +39,4 @@ async fn handel_socket(socket: WebSocket) {
 
     tokio::spawn(write(sender));
     tokio::spawn(read(receiver));
-}
-
-async fn read(receiver: SplitStream<WebSocket>) {
-    // ...
-}
-
-async fn write(sender: SplitSink<WebSocket, Message>) {
-    // ...
 }
