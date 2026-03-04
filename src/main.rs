@@ -14,8 +14,7 @@ use tokio;
 use tower_http::services::ServeDir;
 mod room;
 mod utils;
-use crate::room::read;
-use crate::room::write;
+use crate::room::interact;
 
 #[tokio::main]
 async fn main() {
@@ -35,8 +34,5 @@ async fn handler(socket: WebSocketUpgrade) -> Response {
 }
 
 async fn handel_socket(socket: WebSocket) {
-    let (sender, receiver) = socket.split();
-
-    tokio::spawn(write(sender));
-    tokio::spawn(read(receiver));
+    room::interact(socket).await;
 }
