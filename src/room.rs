@@ -15,8 +15,8 @@ pub async fn interact(socket: WebSocket, state: State<StateType>) -> Result<(), 
     let mut map = state.lock().await;
     if !map.contains_key(&hash) {
         map.insert(hash, sender);
-        drop(map)
     }
+    drop(map);
 
     while let Some(msg) = receiver.next().await {
         match msg {
