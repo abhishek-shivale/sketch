@@ -1,14 +1,14 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use crate::utils::{Data, StateType};
-use axum::{Error, extract::{
+use axum::extract::{
     State,
     ws::{Message, Utf8Bytes, WebSocket},
-}};
+};
 use futures_util::{SinkExt, StreamExt};
 use uuid::Uuid;
 
-pub async fn interact(socket: WebSocket, state: State<StateType>) -> Result<(), Error> {
+pub async fn interact(socket: WebSocket, state: State<StateType>) {
     let (sender, mut receiver) = socket.split();
     let key = Uuid::new_v4();
     let hash = calculate_hash(&key);
@@ -26,7 +26,7 @@ pub async fn interact(socket: WebSocket, state: State<StateType>) -> Result<(), 
                         let send_data =
                             serde_json::to_string(&parsed).expect("there is error stringify!!!");
                         let utf8 = Utf8Bytes::from(send_data);
-                        brodcast(Message::Text(utf8), &state).await?;
+                        brodcast(Message::Text(utf8), &state).await;
                     }
                     Err(e) => {
                         eprintln!("Failed to deserialize: {:?}", e);
@@ -38,18 +38,30 @@ pub async fn interact(socket: WebSocket, state: State<StateType>) -> Result<(), 
             Ok(Message::Pong(_)) => println!("Got pong"),
             Ok(Message::Close(_)) => {
                 state.lock().await.remove(&hash);
-            },
+            }
             Err(e) => eprintln!("Somthing went wrong!!!, {}", e),
         }
     }
-    Ok(())
 }
 
-async fn brodcast(message: Message, state: &State<StateType>) -> Result<(), axum::Error> {
-    for (_key, sender) in state.clone().lock().await.iter_mut() {
-        sender.send(message.clone()).await?;
+async fn brodcast(message: Message, state: &State<StateType>) {
+    let mut failed_keys: Vec<u64> = vec![];
+    let mut map = state.lock().await;
+    for (key, sender) in map.iter_mut() {
+        match sender.send(message.clone()).await {
+            Err(_) => {
+                eprintln!("Error while sending message for: {}", key);
+                failed_keys.push(*key);
+            }
+            Ok(()) => {}
+        };
     }
-    Ok(())
+
+    for key in failed_keys {
+        map.remove(&key);
+    }
+
+    drop(map)
 }
 
 fn calculate_hash<T: Hash>(t: &T) -> u64 {
