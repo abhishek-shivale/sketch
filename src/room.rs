@@ -1,14 +1,22 @@
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 use crate::utils::{Data, StateType};
-use axum::extract::{
-    ws::{Message, Utf8Bytes, WebSocket},
+use axum::{Error, extract::{
     State,
-};
+    ws::{Message, Utf8Bytes, WebSocket},
+}};
 use futures_util::{SinkExt, StreamExt};
+use uuid::Uuid;
 
-pub async fn interact(mut socket: WebSocket, mut state: State<StateType>) {
-    let (mut sender, mut receiver) = socket.split();
-
-    &state.lock().await.push(sender);
+pub async fn interact(socket: WebSocket, state: State<StateType>) -> Result<(), Error> {
+    let (sender, mut receiver) = socket.split();
+    let key = Uuid::new_v4();
+    let hash = calculate_hash(&key);
+    let mut map = state.lock().await;
+    if !map.contains_key(&hash) {
+        map.insert(hash, sender);
+        drop(map)
+    }
 
     while let Some(msg) = receiver.next().await {
         match msg {
@@ -18,7 +26,7 @@ pub async fn interact(mut socket: WebSocket, mut state: State<StateType>) {
                         let send_data =
                             serde_json::to_string(&parsed).expect("there is error stringify!!!");
                         let utf8 = Utf8Bytes::from(send_data);
-                        brodcast(Message::Text(utf8), &state).await;
+                        brodcast(Message::Text(utf8), &state).await?;
                     }
                     Err(e) => {
                         eprintln!("Failed to deserialize: {:?}", e);
@@ -28,14 +36,24 @@ pub async fn interact(mut socket: WebSocket, mut state: State<StateType>) {
             Ok(Message::Binary(_)) => println!("Got binary"),
             Ok(Message::Ping(_)) => println!("Got ping"),
             Ok(Message::Pong(_)) => println!("Got pong"),
-            Ok(Message::Close(_)) => println!("Got Close"),
-            Err(e) => eprintln!("Somthing went wrong!!!"),
+            Ok(Message::Close(_)) => {
+                state.lock().await.remove(&hash);
+            },
+            Err(e) => eprintln!("Somthing went wrong!!!, {}", e),
         }
     }
+    Ok(())
 }
 
-async fn brodcast(message: Message, state: &State<StateType>) {
-    for so in state.clone().lock().await.iter_mut() {
-        so.send(message.clone()).await.expect("TODO: panic message");
+async fn brodcast(message: Message, state: &State<StateType>) -> Result<(), axum::Error> {
+    for (_key, sender) in state.clone().lock().await.iter_mut() {
+        sender.send(message.clone()).await?;
     }
+    Ok(())
+}
+
+fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
 }

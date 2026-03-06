@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::stream::SplitSink;
@@ -18,4 +18,4 @@ pub struct Data {
     pub data_type: String
 }
 
-pub type StateType = Arc<Mutex<Vec<SplitSink<WebSocket, Message>>>>;
+pub type StateType = Arc<Mutex<HashMap<u64, SplitSink<WebSocket, Message>>>>;
