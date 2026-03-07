@@ -1,7 +1,7 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const socket = new WebSocket("ws://127.0.0.1:3000/ws");
-const USER_ID = Math.floor(Math.random() * 10);
+let user;
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -20,12 +20,16 @@ async function startDrawing(e) {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(
       JSON.stringify({
-        key: USER_ID,
+        key: "message",
         value: {
-          x: e.clientX,
-          y: e.clientY,
+          events: {
+            user_started_drawing: {
+              x: e.clientX,
+              y: e.clientY,
+            },
+          },
         },
-        data_type: "START",
+        user,
       }),
     );
   }
@@ -37,12 +41,13 @@ function stopDrawing() {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(
       JSON.stringify({
-        key: USER_ID,
+        key: "message",
         value: {
-          x: 0,
-          y: 0,
+          events: {
+            user_stopped_drawing: {},
+          },
         },
-        data_type: "STOP",
+        user,
       }),
     );
   }
@@ -53,7 +58,7 @@ function draw(e) {
 
   ctx.lineWidth = 3;
   ctx.lineCap = "round";
-  ctx.strokeStyle = e.clientX < 200 ? "red" : "black";
+  ctx.strokeStyle = user.color ?? "black";
 
   ctx.lineTo(e.clientX, e.clientY);
   ctx.stroke();
@@ -61,12 +66,16 @@ function draw(e) {
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(
       JSON.stringify({
-        key: USER_ID,
+        key: "message",
         value: {
-          x: e.clientX,
-          y: e.clientY,
+          events: {
+            user_is_drawing: {
+              x: e.clientX,
+              y: e.clientY,
+            },
+          },
         },
-        data_type: "DRAW",
+        user,
       }),
     );
   }
@@ -76,27 +85,41 @@ function draw(e) {
 socket.addEventListener("message", (msg) => {
   const data = JSON.parse(msg.data);
 
-  console.log(data.key, USER_ID);
-
-  if (data.key !== USER_ID) {
-    if (data.data_type == "STOP") {
-      ctx.closePath();
-      otherUserDraw[data.key] = false;
-      return;
+  switch (data.key) {
+    case "connected": {
+      user = data.user;
+      break;
     }
-    if (
-      !otherUserDraw[data.key] ||
-      otherUserDraw[data.key] == false ||
-      msg.data_type == "START"
-    ) {
-      otherUserDraw[data.key] = true;
-      ctx.beginPath();
-      ctx.moveTo(data.value.x, data.value.y);
+    case "message": {
+      if (data.user.id === user.id) return;
+      const eventKey = Object.keys(data.value.events)[0];
+      switch (eventKey) {
+        case "user_started_drawing": {
+          const draw = data.value.events.user_started_drawing;
+          ctx.beginPath();
+          console.log(draw)
+          ctx.moveTo(draw.x, draw.y);
+          break;
+        }
+        case "user_is_drawing": {
+          const draw = data.value.events.user_is_drawing;
+          ctx.lineWidth = 3;
+          ctx.lineCap = "round";
+          ctx.strokeStyle = data.user.color ?? "green";
+          console.log(draw)
+          ctx.lineTo(draw.x, draw.y);
+          ctx.stroke();
+          break;
+        }
+        case "user_stopped_drawing": {
+          ctx.closePath();
+          break;
+        }
+      }
     }
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "green";
-    ctx.lineTo(data.value.x, data.value.y);
-    ctx.stroke();
+    case "disconnect": {
+    }
+    default: {
+    }
   }
 });
