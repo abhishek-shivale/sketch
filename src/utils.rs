@@ -5,7 +5,7 @@ use futures_util::stream::SplitSink;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum GlobalEvents {
     Connected,
@@ -13,7 +13,7 @@ pub enum GlobalEvents {
     Message,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum MessageEvents {
     // UserJoinedRoom,
@@ -25,26 +25,26 @@ pub enum MessageEvents {
     UserStoppedDrawing,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct User {
     pub id: u64,
     pub name: String,
     pub color: String,
 }
 
-// #[derive(Serialize, Deserialize, Debug)]
+// #[derive(Serialize, Deserialize, Debug, Clone)]
 // pub struct Room {
 //     pub id: u64,
 //     pub name: String,
 //     pub admin: u64,
 // }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DataValue {
     pub events: MessageEvents,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Data {
     pub key: GlobalEvents,
     pub value: Option<DataValue>,

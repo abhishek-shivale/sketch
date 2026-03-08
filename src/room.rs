@@ -1,6 +1,6 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use crate::utils::{Data, GlobalEvents, MessageEvents, SenderType, StateType};
+use crate::{state::AppState, utils::{Data, GlobalEvents, MessageEvents, SenderType, StateType}};
 use axum::extract::{
     State,
     ws::{Message, WebSocket},
@@ -8,11 +8,11 @@ use axum::extract::{
 use futures_util::{SinkExt, StreamExt};
 use uuid::Uuid;
 
-pub async fn interact(socket: WebSocket, state: State<StateType>) {
+pub async fn interact(socket: WebSocket, state: State<AppState>) {
     let (mut sender, mut receiver) = socket.split();
     let key = Uuid::new_v4();
     let hash = calculate_hash(&key);
-    let mut map = state.lock().await;
+    let mut map = state.0.user.lock().await;
     if !map.contains_key(&hash) {
         {
             let send_data = Data::connected(hash);
@@ -54,7 +54,7 @@ pub async fn interact(socket: WebSocket, state: State<StateType>) {
                 };
             }
             Ok(Message::Close(_)) => {
-                state.lock().await.remove(&hash);
+                state.0.user.lock().await.remove(&hash);
             }
             Err(e) => eprintln!("Somthing went wrong!!!, {}", e),
             _ => {}
@@ -62,10 +62,10 @@ pub async fn interact(socket: WebSocket, state: State<StateType>) {
     }
 }
 
-async fn brodcast(message: Data, state: &State<StateType>) {
+async fn brodcast(message: Data, state: &State<AppState>) {
     let data = message.convert();
     let mut failed_keys: Vec<u64> = vec![];
-    let mut map = state.lock().await;
+    let mut map = state.0.user.lock().await;
     for (key, sender) in map.iter_mut() {
         match sender.send(data.clone()).await {
             Err(_) => {
