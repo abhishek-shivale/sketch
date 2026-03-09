@@ -3,6 +3,8 @@ use chrono::{DateTime, Utc};
 use futures_util::stream::SplitSink;
 use serde::{Deserialize, Serialize};
 
+use crate::state::HistoryEvent;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
 pub enum GlobalEvents {
@@ -33,6 +35,34 @@ pub struct Action {
     image_data: Option<String>,
     image_height: Option<i16>,
     image_width: Option<i16>,
+    room_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Room {
+    id: String,
+    members: Vec<String>,
+    created_by: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ChatMessage {
+    message_id: String,
+    text: String,
+    reaction_ids: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Chat {
+    room_id: String,
+    message: Option<Vec<ChatMessage>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Reaction {
+    room_id: String,
+    message_id: String,
+    reaction_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -64,6 +94,25 @@ pub enum MessageEvents {
         id: Option<String>,
         ids: Vec<String>,
     },
+    RoomCreated {
+        room: Room,
+    },
+    RoomJoined {
+        room: Room,
+    },
+    RoomRemoved {
+        room: Room,
+    },
+    ChatMessage {
+        chat: Chat,
+    },
+    ChatReaction {
+        reaction: Reaction,
+    },
+    PlayBack {
+        room_id: String,
+        history: Vec<HistoryEvent>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -72,13 +121,6 @@ pub struct User {
     pub name: String,
     pub color: String,
 }
-
-// #[derive(Serialize, Deserialize, Debug, Clone)]
-// pub struct Room {
-//     pub id: u64,
-//     pub name: String,
-//     pub admin: u64,
-// }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DataValue {
@@ -107,36 +149,6 @@ impl Data {
             },
         }
     }
-
-    // pub fn user_is_drawing(x: i32, y: i32, user: User) -> Self {
-    //     Self {
-    //         key: GlobalEvents::Message,
-    //         value: Some(DataValue {
-    //             events: MessageEvents::UserIsDrawing { x, y },
-    //         }),
-    //         user,
-    //     }
-    // }
-
-    // pub fn user_started_drawing(x: i32, y: i32, user: User) -> Self {
-    //     Self {
-    //         key: GlobalEvents::Message,
-    //         value: Some(DataValue {
-    //             events: MessageEvents::UserStartedDrawing { x, y },
-    //         }),
-    //         user,
-    //     }
-    // }
-
-    // pub fn user_stopped_drawing(user: User) -> Self {
-    //     Self {
-    //         key: GlobalEvents::Message,
-    //         value: Some(DataValue {
-    //             events: MessageEvents::UserStoppedDrawing,
-    //         }),
-    //         user,
-    //     }
-    // }
 
     pub fn convert(self) -> Message {
         let utf8 = Utf8Bytes::from(serde_json::to_string(&self).expect("Parsing Fail"));

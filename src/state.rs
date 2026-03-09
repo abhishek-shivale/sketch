@@ -1,6 +1,7 @@
 use axum::extract::ws::{Message, WebSocket};
 use chrono::{DateTime, Utc};
 use futures_util::stream::SplitSink;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -17,7 +18,8 @@ pub struct AppState {
     pub history: History,
 }
 
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
 pub struct HistoryEvent {
     pub event_id: Uuid,
     pub event_type: String,
