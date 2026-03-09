@@ -31,18 +31,19 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                         GlobalEvents::Message => {
                             if let Some(data) = parsed.value {
                                 match data.events {
-                                    MessageEvents::UserStartedDrawing { x, y } => {
-                                        let send_data = Data::user_started_drawing(x, y, parsed.user);
-                                        brodcast(send_data, &state).await;
-                                    }
-                                    MessageEvents::UserIsDrawing { x, y } => {
-                                        let send_data = Data::user_is_drawing(x, y, parsed.user);
-                                        brodcast(send_data, &state).await;
-                                    }
-                                    MessageEvents::UserStoppedDrawing => {
-                                        let send_data = Data::user_stopped_drawing(parsed.user);
-                                        brodcast(send_data, &state).await;
-                                    }
+                                    // MessageEvents::UserStartedDrawing { x, y } => {
+                                    //     let send_data = Data::user_started_drawing(x, y, parsed.user);
+                                    //     brodcast(send_data, &state).await;
+                                    // }
+                                    // MessageEvents::UserIsDrawing { x, y } => {
+                                    //     let send_data = Data::user_is_drawing(x, y, parsed.user);
+                                    //     brodcast(send_data, &state).await;
+                                    // }
+                                    // MessageEvents::UserStoppedDrawing => {
+                                    //     let send_data = Data::user_stopped_drawing(parsed.user);
+                                    //     brodcast(send_data, &state).await;
+                                    // }
+                                    _ => {}
                                 }
                             }
                         }
