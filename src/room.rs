@@ -1,6 +1,6 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use crate::{state::AppState, utils::{Data, GlobalEvents, MessageEvents, SenderType, StateType}};
+use crate::{state::AppState, utils::{Data, GlobalEvents, MessageEvents, SenderType}};
 use axum::extract::{
     State,
     ws::{Message, WebSocket},

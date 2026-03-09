@@ -1,19 +1,17 @@
 use axum::{
     Router,
     extract::{
-         State, WebSocketUpgrade, ws::{Message, WebSocket}
+         State, WebSocketUpgrade
     },
     response::Response,
     routing::any,
 };
-use futures_util::stream::SplitSink;
-use std::{collections::HashMap, sync::Arc};
-use tokio::{self, sync::Mutex};
+use tokio::{self};
 use tower_http::services::ServeDir;
 mod room;
 mod state;
 mod utils;
-use crate::{state::AppState, utils::StateType};
+use crate::{state::AppState};
 
 #[tokio::main]
 async fn main() {

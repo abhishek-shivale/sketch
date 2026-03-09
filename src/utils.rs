@@ -1,9 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
-
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use futures_util::stream::SplitSink;
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -103,5 +100,3 @@ impl Data {
 }
 
 pub type SenderType = SplitSink<WebSocket, Message>;
-
-pub type StateType = Arc<Mutex<HashMap<u64, SplitSink<WebSocket, Message>>>>;
