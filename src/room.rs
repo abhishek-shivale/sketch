@@ -189,15 +189,18 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                             Data::room_joined(parsed.user.clone(), room.clone());
 
                                         {
-                                            state
+                                            let mut curr_room = state
                                                 .0
                                                 .rooms
                                                 .lock()
                                                 .await
                                                 .entry(room.id.clone())
                                                 .or_insert(room.clone())
-                                                .members
-                                                .push(parsed.user.id.clone());
+                                                .members.clone();
+                                            
+                                            if !curr_room.contains(&parsed.user.id) {
+                                                curr_room.push(parsed.user.id.clone());
+                                            }
                                         }
 
                                         add_event_history(
