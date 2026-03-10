@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::utils::{Data, Room};
 
-pub type User = Arc<Mutex<HashMap<u64, SplitSink<WebSocket, Message>>>>;
+pub type User = Arc<Mutex<HashMap<Uuid, SplitSink<WebSocket, Message>>>>;
 
 pub type History = Arc<Mutex<Vec<HistoryEvent>>>;
 

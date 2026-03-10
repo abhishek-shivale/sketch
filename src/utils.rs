@@ -2,7 +2,7 @@ use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use chrono::{DateTime, Utc};
 use futures_util::stream::SplitSink;
 use serde::{Deserialize, Serialize};
-
+use uuid::Uuid;
 use crate::state::HistoryEvent;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -111,7 +111,7 @@ pub enum MessageEvents {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct User {
-    pub id: u64,
+    pub id: Uuid,
     pub name: String,
     pub color: String,
 }
@@ -130,7 +130,7 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn connected(user_id: u64) -> Self {
+    pub fn connected(user_id: Uuid) -> Self {
         Self {
             key: GlobalEvents::Connected,
             value: None,
@@ -142,7 +142,7 @@ impl Data {
         }
     }
 
-    pub fn disconnected(user: User) -> Self {
+    pub fn _disconnected(user: User) -> Self {
         Self {
             key: GlobalEvents::Disconnected,
             value: None,
