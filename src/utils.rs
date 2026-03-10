@@ -1,9 +1,9 @@
+use crate::state::HistoryEvent;
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use chrono::{DateTime, Utc};
 use futures_util::stream::SplitSink;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::state::HistoryEvent;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
@@ -35,13 +35,13 @@ pub struct Action {
     image_data: Option<String>,
     image_height: Option<i16>,
     image_width: Option<i16>,
-    room_id: String,
+    pub room_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Room {
     pub id: String,
-    pub members: Vec<String>,
+    pub members: Vec<Uuid>,
     pub created_by: String,
 }
 
@@ -54,13 +54,13 @@ pub struct ChatMessage {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Chat {
-    room_id: String,
+    pub room_id: String,
     message: Option<Vec<ChatMessage>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Reaction {
-    room_id: String,
+    pub room_id: String,
     message_id: String,
     reaction_id: String,
 }
@@ -71,6 +71,7 @@ pub enum MessageEvents {
     CanvasCursor {
         x: i16,
         y: i16,
+        room_id: String,
     },
     CanvasAdd {
         action: Action,
@@ -87,6 +88,7 @@ pub enum MessageEvents {
     CanvasDelete {
         id: Option<String>,
         ids: Option<Vec<String>>,
+        room_id: String,
     },
     RoomCreated {
         room: Room,
@@ -105,7 +107,7 @@ pub enum MessageEvents {
     },
     PlayBack {
         room_id: String,
-        history: Vec<HistoryEvent>,
+        history: Option<Vec<HistoryEvent>>,
     },
 }
 
@@ -150,11 +152,11 @@ impl Data {
         }
     }
 
-    pub fn canvas_cursor(user: User, x: i16, y: i16) -> Self {
+    pub fn canvas_cursor(user: User, x: i16, y: i16, room_id: String) -> Self {
         Self {
             key: GlobalEvents::Message,
             value: Some(DataValue {
-                events: MessageEvents::CanvasCursor { x, y },
+                events: MessageEvents::CanvasCursor { x, y, room_id },
             }),
             user,
         }
@@ -200,11 +202,16 @@ impl Data {
         }
     }
 
-    pub fn canvas_delete(user: User, id: Option<String>, ids: Option<Vec<String>>) -> Self {
+    pub fn canvas_delete(
+        user: User,
+        id: Option<String>,
+        ids: Option<Vec<String>>,
+        room_id: String,
+    ) -> Self {
         Self {
             key: GlobalEvents::Message,
             value: Some(DataValue {
-                events: MessageEvents::CanvasDelete { id, ids },
+                events: MessageEvents::CanvasDelete { id, ids, room_id },
             }),
             user,
         }
@@ -260,7 +267,7 @@ impl Data {
         }
     }
 
-    pub fn playback(user: User, room_id: String, history: Vec<HistoryEvent>) -> Self {
+    pub fn playback(user: User, room_id: String, history: Option<Vec<HistoryEvent>>) -> Self {
         Self {
             key: GlobalEvents::Message,
             value: Some(DataValue {
@@ -276,3 +283,20 @@ impl Data {
     }
 }
 pub type SenderType = SplitSink<WebSocket, Message>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
+pub enum EventKind {
+    CanvasCursor,
+    CanvasAdd,
+    CanvasUpdate,
+    CanvasDuplicate,
+    CanvasMove,
+    CanvasDelete,
+    RoomCreated,
+    RoomJoined,
+    RoomRemoved,
+    ChatMessage,
+    ChatReaction,
+    PlayBack,
+}
