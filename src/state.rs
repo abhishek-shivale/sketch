@@ -15,7 +15,7 @@ pub type User = Arc<Mutex<HashMap<u64, SplitSink<WebSocket, Message>>>>;
 
 pub type History = Arc<Mutex<Vec<HistoryEvent>>>;
 
-pub type Rooms = Arc<Mutex<Vec<Room>>>;
+pub type Rooms = Arc<Mutex<HashMap<String, Room>>>;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -38,7 +38,7 @@ impl AppState {
         Self {
             users: Arc::new(Mutex::new(HashMap::new())),
             history: Arc::new(Mutex::new(Vec::new())),
-            rooms: Arc::new(Mutex::new(Vec::new())),
+            rooms: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }

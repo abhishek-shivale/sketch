@@ -1,6 +1,9 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use crate::{state::AppState, utils::{Data, GlobalEvents, MessageEvents, SenderType}};
+use crate::{
+    state::AppState,
+    utils::{Data, GlobalEvents, MessageEvents, SenderType},
+};
 use axum::extract::{
     State,
     ws::{Message, WebSocket},
@@ -31,19 +34,59 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                         GlobalEvents::Message => {
                             if let Some(data) = parsed.value {
                                 match data.events {
-                                    // MessageEvents::UserStartedDrawing { x, y } => {
-                                    //     let send_data = Data::user_started_drawing(x, y, parsed.user);
-                                    //     brodcast(send_data, &state).await;
-                                    // }
-                                    // MessageEvents::UserIsDrawing { x, y } => {
-                                    //     let send_data = Data::user_is_drawing(x, y, parsed.user);
-                                    //     brodcast(send_data, &state).await;
-                                    // }
-                                    // MessageEvents::UserStoppedDrawing => {
-                                    //     let send_data = Data::user_stopped_drawing(parsed.user);
-                                    //     brodcast(send_data, &state).await;
-                                    // }
-                                    _ => {}
+                                    MessageEvents::CanvasCursor { x, y } => {
+                                        let send_data = Data::canvas_cursor(parsed.user, x, y);
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::CanvasAdd { action } => {
+                                        let send_data = Data::canvas_add(parsed.user, action);
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::CanvasUpdate { action } => {
+                                        let send_data = Data::canvas_update(parsed.user, action);
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::CanvasDuplicate { action } => {
+                                        let send_data = Data::canvas_duplicate(parsed.user, action);
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::CanvasMove { action } => {
+                                        let send_data = Data::canvas_move(parsed.user, action);
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::CanvasDelete { id, ids } => {
+                                        let send_data = Data::canvas_delete(parsed.user, id, ids);
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::RoomCreated { room } => {
+                                        let send_data =
+                                            Data::room_created(parsed.user, room.clone());
+                                        {
+                                            state.0.rooms.lock().await.insert(room.id.clone(), room);
+                                        }
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::RoomJoined { room } => {
+                                        let send_data = Data::room_joined(parsed.user, room.clone());
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::RoomRemoved { room } => {
+                                        let send_data = Data::room_removed(parsed.user, room);
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::ChatMessage { chat } => {
+                                        let send_data = Data::chat_message(parsed.user, chat);
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::ChatReaction { reaction } => {
+                                        let send_data = Data::chat_reaction(parsed.user, reaction);
+                                        brodcast(send_data, &state).await;
+                                    }
+                                    MessageEvents::PlayBack { room_id, history } => {
+                                        let send_data =
+                                            Data::playback(parsed.user, room_id, history);
+                                        brodcast(send_data, &state).await;
+                                    }
                                 }
                             }
                         }
@@ -95,4 +138,3 @@ async fn send_message(send_data: Data, sender: &mut SenderType) {
         _ => {}
     }
 }
-

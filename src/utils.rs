@@ -40,9 +40,9 @@ pub struct Action {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Room {
-    id: String,
-    members: Vec<String>,
-    created_by: String,
+    pub id: String,
+    pub members: Vec<String>,
+    pub created_by: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -86,7 +86,7 @@ pub enum MessageEvents {
     },
     CanvasDelete {
         id: Option<String>,
-        ids: Vec<String>,
+        ids: Option<Vec<String>>,
     },
     RoomCreated {
         room: Room,
@@ -134,21 +134,137 @@ impl Data {
         Self {
             key: GlobalEvents::Connected,
             value: None,
-            user: {
-                User {
-                    id: user_id,
-                    name: "".to_string(),
-                    color: "".to_string(),
-                }
+            user: User {
+                id: user_id,
+                name: "".to_string(),
+                color: "".to_string(),
             },
         }
     }
 
-    pub fn canvas_cursor(user: User, action: Action) -> Self {
+    pub fn disconnected(user: User) -> Self {
+        Self {
+            key: GlobalEvents::Disconnected,
+            value: None,
+            user,
+        }
+    }
+
+    pub fn canvas_cursor(user: User, x: i16, y: i16) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::CanvasCursor { x, y },
+            }),
+            user,
+        }
+    }
+
+    pub fn canvas_add(user: User, action: Action) -> Self {
         Self {
             key: GlobalEvents::Message,
             value: Some(DataValue {
                 events: MessageEvents::CanvasAdd { action },
+            }),
+            user,
+        }
+    }
+
+    pub fn canvas_update(user: User, action: Action) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::CanvasUpdate { action },
+            }),
+            user,
+        }
+    }
+
+    pub fn canvas_duplicate(user: User, action: Action) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::CanvasDuplicate { action },
+            }),
+            user,
+        }
+    }
+
+    pub fn canvas_move(user: User, action: Action) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::CanvasMove { action },
+            }),
+            user,
+        }
+    }
+
+    pub fn canvas_delete(user: User, id: Option<String>, ids: Option<Vec<String>>) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::CanvasDelete { id, ids },
+            }),
+            user,
+        }
+    }
+
+    pub fn room_created(user: User, room: Room) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::RoomCreated { room },
+            }),
+            user,
+        }
+    }
+
+    pub fn room_joined(user: User, room: Room) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::RoomJoined { room },
+            }),
+            user,
+        }
+    }
+
+    pub fn room_removed(user: User, room: Room) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::RoomRemoved { room },
+            }),
+            user,
+        }
+    }
+
+    pub fn chat_message(user: User, chat: Chat) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::ChatMessage { chat },
+            }),
+            user,
+        }
+    }
+
+    pub fn chat_reaction(user: User, reaction: Reaction) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::ChatReaction { reaction },
+            }),
+            user,
+        }
+    }
+
+    pub fn playback(user: User, room_id: String, history: Vec<HistoryEvent>) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::PlayBack { room_id, history },
             }),
             user,
         }
@@ -159,5 +275,4 @@ impl Data {
         Message::Text(utf8)
     }
 }
-
 pub type SenderType = SplitSink<WebSocket, Message>;
