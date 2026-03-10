@@ -14,8 +14,8 @@ pub enum GlobalEvents {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Point {
-    x: i16,
-    y: i16,
+    x: f64,
+    y: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

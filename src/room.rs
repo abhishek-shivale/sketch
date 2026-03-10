@@ -241,7 +241,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                         _ => {}
                     },
                     Err(e) => {
-                        eprintln!("Failed to deserialize: {}", e);
+                        eprintln!("Failed to deserialize: {}, {}", e, data);
                     }
                 };
             }
