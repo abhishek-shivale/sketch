@@ -35,21 +35,37 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                             if let Some(data) = parsed.value.clone() {
                                 match data.events {
                                     MessageEvents::CanvasCursor { x, y, room_id } => {
-                                        let send_data =
-                                            Data::canvas_cursor(parsed.user, x, y, room_id.clone());
-                                        broadcast_in_room(room_id, send_data, &state).await;
+                                        let send_data = Data::canvas_cursor(
+                                            parsed.user.clone(),
+                                            x,
+                                            y,
+                                            room_id.clone(),
+                                        );
+                                        broadcast_in_room(
+                                            room_id,
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
                                     MessageEvents::CanvasAdd { action } => {
                                         let send_data =
                                             Data::canvas_add(parsed.user.clone(), action.clone());
                                         add_event_history(
-                                            parsed,
+                                            parsed.clone(),
                                             EventKind::CanvasAdd,
                                             action.room_id.clone(),
                                             &state,
                                         )
                                         .await;
-                                        broadcast_in_room(action.room_id, send_data, &state).await;
+                                        broadcast_in_room(
+                                            action.room_id,
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
                                     MessageEvents::CanvasUpdate { action } => {
                                         let send_data = Data::canvas_update(
@@ -58,14 +74,20 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         );
 
                                         add_event_history(
-                                            parsed,
+                                            parsed.clone(),
                                             EventKind::CanvasUpdate,
                                             action.room_id.clone(),
                                             &state,
                                         )
                                         .await;
 
-                                        broadcast_in_room(action.room_id, send_data, &state).await;
+                                        broadcast_in_room(
+                                            action.room_id,
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
 
                                     MessageEvents::CanvasDuplicate { action } => {
@@ -75,14 +97,20 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         );
 
                                         add_event_history(
-                                            parsed,
+                                            parsed.clone(),
                                             EventKind::CanvasDuplicate,
                                             action.room_id.clone(),
                                             &state,
                                         )
                                         .await;
 
-                                        broadcast_in_room(action.room_id, send_data, &state).await;
+                                        broadcast_in_room(
+                                            action.room_id,
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
 
                                     MessageEvents::CanvasMove { action } => {
@@ -90,14 +118,20 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                             Data::canvas_move(parsed.user.clone(), action.clone());
 
                                         add_event_history(
-                                            parsed,
+                                            parsed.clone(),
                                             EventKind::CanvasMove,
                                             action.room_id.clone(),
                                             &state,
                                         )
                                         .await;
 
-                                        broadcast_in_room(action.room_id, send_data, &state).await;
+                                        broadcast_in_room(
+                                            action.room_id,
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
 
                                     MessageEvents::CanvasDelete { id, ids, room_id } => {
@@ -109,14 +143,20 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         );
 
                                         add_event_history(
-                                            parsed,
+                                            parsed.clone(),
                                             EventKind::CanvasDelete,
                                             room_id.clone(),
                                             &state,
                                         )
                                         .await;
 
-                                        broadcast_in_room(room_id, send_data, &state).await;
+                                        broadcast_in_room(
+                                            room_id,
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
 
                                     MessageEvents::RoomCreated { room } => {
@@ -161,14 +201,20 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         }
 
                                         add_event_history(
-                                            parsed,
+                                            parsed.clone(),
                                             EventKind::RoomJoined,
                                             room.id.clone(),
                                             &state,
                                         )
                                         .await;
 
-                                        broadcast_in_room(room.id.clone(), send_data, &state).await;
+                                        broadcast_in_room(
+                                            room.id.clone(),
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
 
                                     MessageEvents::RoomRemoved { room } => {
@@ -200,20 +246,32 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         }
 
                                         add_event_history(
-                                            parsed,
+                                            parsed.clone(),
                                             EventKind::RoomRemoved,
                                             room.id.clone(),
                                             &state,
                                         )
                                         .await;
 
-                                        broadcast_in_room(room.id.clone(), send_data, &state).await;
+                                        broadcast_in_room(
+                                            room.id.clone(),
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
 
                                     MessageEvents::ChatMessage { chat } => {
                                         let send_data =
                                             Data::chat_message(parsed.user.clone(), chat.clone());
-                                        broadcast_in_room(chat.room_id, send_data, &state).await;
+                                        broadcast_in_room(
+                                            chat.room_id,
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
 
                                     MessageEvents::ChatReaction { reaction } => {
@@ -221,8 +279,13 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                             parsed.user.clone(),
                                             reaction.clone(),
                                         );
-                                        broadcast_in_room(reaction.room_id, send_data, &state)
-                                            .await;
+                                        broadcast_in_room(
+                                            reaction.room_id,
+                                            send_data,
+                                            &state,
+                                            Some(parsed.user.id),
+                                        )
+                                        .await;
                                     }
 
                                     MessageEvents::PlayBack { room_id, history } => {
@@ -281,7 +344,12 @@ async fn send_message(send_data: Data, sender: &mut SenderType) {
     }
 }
 
-async fn broadcast_in_room(room_id: String, message: Data, state: &State<AppState>) {
+async fn broadcast_in_room(
+    room_id: String,
+    message: Data,
+    state: &State<AppState>,
+    exclude: Option<Uuid>,
+) {
     let data = message.convert();
     let mut failed_keys: Vec<Uuid> = vec![];
     let map = state.0.rooms.lock().await;
@@ -291,6 +359,10 @@ async fn broadcast_in_room(room_id: String, message: Data, state: &State<AppStat
     if let Some(room) = members {
         for member in room.members.iter() {
             if let Some(socket) = user.get_mut(member) {
+                if Some(*member) == exclude {
+                    continue;
+                }
+
                 match socket.send(data.clone()).await {
                     Err(_) => {
                         eprintln!("Error while sending message for: {}", member);
