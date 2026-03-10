@@ -12,7 +12,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
     let (mut sender, mut receiver) = socket.split();
     let key = Uuid::new_v4();
     let hash = calculate_hash(&key);
-    let mut map = state.0.user.lock().await;
+    let mut map = state.0.users.lock().await;
     if !map.contains_key(&hash) {
         {
             let send_data = Data::connected(hash);
@@ -55,7 +55,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                 };
             }
             Ok(Message::Close(_)) => {
-                state.0.user.lock().await.remove(&hash);
+                state.0.users.lock().await.remove(&hash);
             }
             Err(e) => eprintln!("Somthing went wrong!!!, {}", e),
             _ => {}
@@ -66,7 +66,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
 async fn brodcast(message: Data, state: &State<AppState>) {
     let data = message.convert();
     let mut failed_keys: Vec<u64> = vec![];
-    let mut map = state.0.user.lock().await;
+    let mut map = state.0.users.lock().await;
     for (key, sender) in map.iter_mut() {
         match sender.send(data.clone()).await {
             Err(_) => {

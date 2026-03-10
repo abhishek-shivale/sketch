@@ -2,20 +2,26 @@ use axum::extract::ws::{Message, WebSocket};
 use chrono::{DateTime, Utc};
 use futures_util::stream::SplitSink;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
+use std::{
+    collections::HashMap,
+    sync::{Arc},
+};
 use uuid::Uuid;
 
-use crate::utils::Data;
+use crate::utils::{Data, Room};
 
 pub type User = Arc<Mutex<HashMap<u64, SplitSink<WebSocket, Message>>>>;
 
 pub type History = Arc<Mutex<Vec<HistoryEvent>>>;
 
+pub type Rooms = Arc<Mutex<Vec<Room>>>;
+
 #[derive(Clone)]
 pub struct AppState {
-    pub user: User,
+    pub users: User,
     pub history: History,
+    pub rooms: Rooms,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -30,10 +36,9 @@ pub struct HistoryEvent {
 impl AppState {
     pub fn new() -> Self {
         Self {
-            user: Arc::new(Mutex::new(
-                HashMap::<u64, SplitSink<WebSocket, Message>>::new(),
-            )),
-            history: Arc::new(Mutex::new(Vec::<HistoryEvent>::new())),
+            users: Arc::new(Mutex::new(HashMap::new())),
+            history: Arc::new(Mutex::new(Vec::new())),
+            rooms: Arc::new(Mutex::new(Vec::new())),
         }
     }
 }

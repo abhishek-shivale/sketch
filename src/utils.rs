@@ -69,28 +69,22 @@ pub struct Reaction {
 #[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
 pub enum MessageEvents {
     CanvasCursor {
-        user: User,
         x: i16,
         y: i16,
     },
     CanvasAdd {
-        user: User,
         action: Action,
     },
     CanvasUpdate {
-        user: User,
         action: Action,
     },
     CanvasDuplicate {
-        user: User,
         action: Action,
     },
     CanvasMove {
-        user: User,
         action: Action,
     },
     CanvasDelete {
-        user: User,
         id: Option<String>,
         ids: Vec<String>,
     },
@@ -144,9 +138,19 @@ impl Data {
                 User {
                     id: user_id,
                     name: "".to_string(),
-                    color: "Red".to_string(),
+                    color: "".to_string(),
                 }
             },
+        }
+    }
+
+    pub fn canvas_cursor(user: User, action: Action) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::CanvasAdd { action },
+            }),
+            user,
         }
     }
 
