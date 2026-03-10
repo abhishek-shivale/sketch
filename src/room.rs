@@ -28,12 +28,15 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
             Ok(Message::Text(data)) => {
                 match serde_json::from_str::<Data>(&data) {
                     Ok(parsed) => match &parsed.key {
-                        GlobalEvents::Disconnected => {}
+                        GlobalEvents::Disconnected => {
+                            clean_up(key, &state).await;
+                        }
                         GlobalEvents::Message => {
                             if let Some(data) = parsed.value.clone() {
                                 match data.events {
                                     MessageEvents::CanvasCursor { x, y, room_id } => {
-                                        let send_data = Data::canvas_cursor(parsed.user, x, y, room_id.clone());
+                                        let send_data =
+                                            Data::canvas_cursor(parsed.user, x, y, room_id.clone());
                                         broadcast_in_room(room_id, send_data, &state).await;
                                     }
                                     MessageEvents::CanvasAdd { action } => {
@@ -104,7 +107,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                             ids.clone(),
                                             room_id.clone(),
                                         );
-                                        // todo!
+
                                         add_event_history(
                                             parsed,
                                             EventKind::CanvasDelete,
@@ -145,6 +148,18 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         let send_data =
                                             Data::room_joined(parsed.user.clone(), room.clone());
 
+                                        {
+                                            state
+                                                .0
+                                                .rooms
+                                                .lock()
+                                                .await
+                                                .entry(room.id.clone())
+                                                .or_insert(room.clone())
+                                                .members
+                                                .push(parsed.user.id.clone());
+                                        }
+
                                         add_event_history(
                                             parsed,
                                             EventKind::RoomJoined,
@@ -160,6 +175,29 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         // User Left the room
                                         let send_data =
                                             Data::room_removed(parsed.user.clone(), room.clone());
+
+                                        {
+                                            let mut rooms = state.0.rooms.lock().await;
+                                            let mut is_empty = false;
+
+                                            if let Some(curr_room) = rooms.get_mut(&room.id) {
+                                                curr_room
+                                                    .members
+                                                    .retain(|id| id != &parsed.user.id);
+                                                is_empty = curr_room.members.is_empty();
+                                            }
+
+                                            if is_empty {
+                                                rooms.remove(&room.id);
+                                                drop(rooms);
+                                                state
+                                                    .0
+                                                    .history
+                                                    .lock()
+                                                    .await
+                                                    .remove(&room.id.clone());
+                                            }
+                                        }
 
                                         add_event_history(
                                             parsed,
@@ -195,7 +233,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                             lock.get(&room_id).cloned(),
                                         );
                                         drop(lock);
-                                        broadcast(send_data, &state).await;
+                                        broadcast_to_user(&parsed.user.id, send_data, &state).await;
                                     }
                                 }
                             }
@@ -214,6 +252,8 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
             _ => {}
         }
     }
+
+    clean_up(key, &state).await;
 }
 
 async fn broadcast(message: Data, state: &State<AppState>) {
@@ -230,11 +270,10 @@ async fn broadcast(message: Data, state: &State<AppState>) {
         };
     }
 
+    drop(map);
     for key in failed_keys {
-        map.remove(&key);
+        clean_up(key, state).await;
     }
-
-    drop(map)
 }
 async fn send_message(send_data: Data, sender: &mut SenderType) {
     match sender.send(send_data.convert()).await {
@@ -246,8 +285,10 @@ async fn broadcast_in_room(room_id: String, message: Data, state: &State<AppStat
     let data = message.convert();
     let mut failed_keys: Vec<Uuid> = vec![];
     let map = state.0.rooms.lock().await;
+    let members = &map.get(&room_id).cloned();
+    drop(map);
     let mut user = state.0.users.lock().await;
-    if let Some(room) = map.get(&room_id) {
+    if let Some(room) = members {
         for member in room.members.iter() {
             if let Some(socket) = user.get_mut(member) {
                 match socket.send(data.clone()).await {
@@ -259,6 +300,12 @@ async fn broadcast_in_room(room_id: String, message: Data, state: &State<AppStat
                 };
             }
         }
+    }
+
+    drop(user);
+
+    for key in failed_keys {
+        clean_up(key, state).await;
     }
 }
 
@@ -276,25 +323,47 @@ async fn add_event_history(
         event_room: event_room.clone(),
     };
 
-    match state.0.history.lock().await.get_mut(&event_room) {
-        Some(x) => x.push(event),
-        None => {
-            let vec: Vec<HistoryEvent> = vec![event];
-            state.0.history.lock().await.insert(event_room, vec);
-        }
-    }
+    let mut lock = state.0.history.lock().await;
+    lock.entry(event_room).or_insert_with(Vec::new).push(event);
 }
 
 async fn broadcast_to_user(user_id: &Uuid, message: Data, state: &State<AppState>) {
     let data = message.convert();
-    let mut failed_keys: Vec<Uuid> = vec![];
     if let Some(sender) = state.0.users.lock().await.get_mut(user_id) {
         match sender.send(data.clone()).await {
             Err(_) => {
                 eprintln!("Error while sending message for:");
-                failed_keys.push(user_id.clone());
             }
             Ok(()) => {}
         };
     }
+}
+
+async fn clean_up(user_id: Uuid, state: &State<AppState>) {
+    let rooms_state = state.0.rooms.lock().await;
+
+    let room_id = rooms_state
+        .iter()
+        .find(|(_, room)| room.members.contains(&user_id))
+        .map(|(id, _)| id.clone());
+
+    drop(rooms_state);
+
+    if let Some(room_id) = room_id {
+        let mut rooms = state.0.rooms.lock().await;
+        let mut is_empty = false;
+
+        if let Some(room) = rooms.get_mut(&room_id) {
+            room.members.retain_mut(|id| id != &user_id);
+            is_empty = room.members.is_empty();
+        }
+
+        if is_empty {
+            rooms.remove(&room_id);
+            drop(rooms);
+            state.0.history.lock().await.remove(&room_id);
+        }
+    }
+
+    state.0.users.lock().await.remove(&user_id);
 }

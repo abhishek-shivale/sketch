@@ -19,7 +19,19 @@ pub struct Point {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum Tools {}
+#[serde(rename_all = "lowercase")]
+pub enum Tools {
+    Pencil,
+    Text,
+    Image,
+    Line,
+    Arrow,
+    Rectangle,
+    Circle,
+    Diamond,
+    Eraser,
+    Select,
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Action {
