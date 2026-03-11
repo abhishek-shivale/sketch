@@ -1,0 +1,41 @@
+name: sketch
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    env:
+      APP_NAME: sketch
+      DEPLOY_DIR: /opt/sketch
+      BINARY_PATH: /opt/sketch/sketch
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update Rust toolchain
+        run: rustup update stable
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Stop service
+        run: sudo systemctl stop ${{ env.APP_NAME }} || true
+
+      - name: Deploy binary
+        run: |
+          sudo mkdir -p ${{ env.DEPLOY_DIR }}
+          sudo cp target/release/${{ env.APP_NAME }} ${{ env.BINARY_PATH }}
+          sudo chmod +x ${{ env.BINARY_PATH }}
+
+      - name: Start service
+        run: sudo systemctl start ${{ env.APP_NAME }}
+
+      - name: Health check
+        run: |
+          sleep 3
+          systemctl is-active --quiet ${{ env.APP_NAME }} \
+            || (journalctl -u ${{ env.APP_NAME }} -n 30 --no-pager && exit 1)
