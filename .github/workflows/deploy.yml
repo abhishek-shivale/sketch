@@ -32,9 +32,11 @@ jobs:
       - name: Deploy binary
         run: |
           sudo mkdir -p ${{ env.DEPLOY_DIR }}
-          sudo cp target/release/${{ env.APP_NAME }} ${{ env.BINARY_PATH }}
-          sudo chmod +x ${{ env.BINARY_PATH }}
+          sudo rm -rf ${{ env.DEPLOY_DIR }}/public
           sudo cp -r public ${{ env.DEPLOY_DIR }}/public
+          sudo cp target/release/${{ env.APP_NAME }} ${{ env.BINARY_PATH }}.new
+          sudo chmod +x ${{ env.BINARY_PATH }}.new
+          sudo mv ${{ env.BINARY_PATH }}.new ${{ env.BINARY_PATH }}
 
       - name: Start service
         run: sudo systemctl start ${{ env.APP_NAME }}
