@@ -22,7 +22,9 @@ jobs:
             rustup update stable
 
       - name: Build release
-        run: cargo build --release
+        run: |
+          . $HOME/.cargo/env 
+          cargo build --release
 
       - name: Stop service
         run: sudo systemctl stop ${{ env.APP_NAME }} || true
