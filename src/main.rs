@@ -5,7 +5,7 @@ use axum::{
     routing::{any, get},
 };
 use tokio::{self};
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 mod room;
 mod state;
 mod utils;
@@ -19,7 +19,9 @@ async fn main() {
         .route("/rooms", get(list_rooms))
         .route("/health", get(|| async { "ok" }))
         .with_state(state)
-        .fallback_service(ServeDir::new("public").append_index_html_on_directories(true));
+        .fallback_service(
+            ServeDir::new("public").not_found_service(ServeFile::new("public/index.html")),
+        );
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
