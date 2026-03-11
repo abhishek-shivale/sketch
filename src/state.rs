@@ -9,7 +9,7 @@ use std::{
 };
 use uuid::Uuid;
 
-use crate::utils::{Data, EventKind, MessageEvents, Room};
+use crate::utils::{Data, EventKind, Room};
 
 pub type User = Arc<Mutex<HashMap<Uuid, SplitSink<WebSocket, Message>>>>;
 

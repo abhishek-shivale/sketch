@@ -1,7 +1,7 @@
 use axum::{
     Router,
     extract::{State, WebSocketUpgrade},
-    response::{IntoResponse, Redirect, Response},
+    response::{IntoResponse, Response},
     routing::{any, get},
 };
 use tokio::{self};
@@ -44,8 +44,4 @@ async fn list_rooms(State(state): State<AppState>) -> impl IntoResponse {
         .map(|r| serde_json::json!({ "id": r.id, "member_count": r.members.len() }))
         .collect();
     axum::Json(body)
-}
-
-async fn fallback() -> Redirect {
-    Redirect::to("/")
 }
