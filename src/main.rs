@@ -27,7 +27,7 @@ async fn main() {
         .await
         .unwrap();
 
-    println!("Server Started");
+    println!("Server Started on http://localhost:3000");
     axum::serve(listener, app).await.unwrap();
 }
 
