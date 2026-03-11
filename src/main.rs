@@ -21,11 +21,12 @@ async fn main() {
         .with_state(state)
         .fallback_service(ServeDir::new("public").append_index_html_on_directories(true));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .unwrap();
 
-    axum::serve(listener, app).await.unwrap()
+    println!("Server Started");
+    axum::serve(listener, app).await.unwrap();
 }
 
 async fn handler(state: State<AppState>, socket: WebSocketUpgrade) -> Response {
