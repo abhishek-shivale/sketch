@@ -6,10 +6,12 @@ use axum::{
 };
 use tokio::{self};
 use tower_http::services::{ServeDir, ServeFile};
+use tower_http::cors::CorsLayer;
 mod room;
 mod state;
 mod utils;
 use crate::state::AppState;
+
 
 #[tokio::main]
 async fn main() {
@@ -20,6 +22,7 @@ async fn main() {
         .route("/count", get(handler_count))
         .route("/health", get(|| async { "ok" }))
         .with_state(state)
+        .layer(CorsLayer::permissive())
         .fallback_service(
             ServeDir::new("public").not_found_service(ServeFile::new("public/index.html")),
         );
