@@ -17,6 +17,7 @@ async fn main() {
     let app = Router::new()
         .route("/ws", any(handler))
         .route("/rooms", get(list_rooms))
+        .route("/count", get(handler_count))
         .route("/health", get(|| async { "ok" }))
         .with_state(state)
         .fallback_service(
@@ -46,4 +47,14 @@ async fn list_rooms(State(state): State<AppState>) -> impl IntoResponse {
         .map(|r| serde_json::json!({ "id": r.id, "member_count": r.members.len() }))
         .collect();
     axum::Json(body)
+}
+
+async fn handler_count(State(state): State<AppState>) -> impl IntoResponse {
+    let room = state.rooms.lock().await;
+    let room_count = room.len();
+    drop(room);
+    let users = state.users.lock().await;
+    let user_count = users.len();
+    drop(users);
+    axum::Json(serde_json::json!({ "activeUsers": user_count, "activeRooms": room_count }))
 }
