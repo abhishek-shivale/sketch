@@ -107,6 +107,7 @@ pub enum MessageEvents {
     },
     RoomJoined {
         room: Room,
+        history: Option<Vec<HistoryEvent>>,
     },
     RoomRemoved {
         room: Room,
@@ -243,11 +244,11 @@ impl Data {
         }
     }
 
-    pub fn room_joined(user: User, room: Room) -> Self {
+    pub fn room_joined(user: User, room: Room, history: Option<Vec<HistoryEvent>>) -> Self {
         Self {
             key: GlobalEvents::Message,
             value: Some(DataValue {
-                events: MessageEvents::RoomJoined { room },
+                events: MessageEvents::RoomJoined { room, history },
             }),
             user,
         }

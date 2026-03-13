@@ -182,20 +182,24 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         broadcast_to_user(&parsed.user.id, send_data, &state).await;
                                     }
 
-                                    MessageEvents::RoomJoined { room } => {
+                                    MessageEvents::RoomJoined {
+                                        room,
+                                        history: _history,
+                                    } => {
                                         // User Join the room
 
-                                        let send_data =
-                                            Data::room_joined(parsed.user.clone(), room.clone());
+                                        let send_data = Data::room_joined(
+                                            parsed.user.clone(),
+                                            room.clone(),
+                                            None,
+                                        );
 
                                         {
-                                            let mut room_lock = state
-                                                .0
-                                                .rooms
-                                                .lock()
-                                                .await;
-                                            
-                                            let curr_room = room_lock.entry(room.id.clone()).or_insert(room.clone());
+                                            let mut room_lock = state.0.rooms.lock().await;
+
+                                            let curr_room = room_lock
+                                                .entry(room.id.clone())
+                                                .or_insert(room.clone());
 
                                             if !curr_room.members.contains(&parsed.user.id) {
                                                 curr_room.members.push(parsed.user.id.clone());
@@ -217,15 +221,15 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                             Some(parsed.user.id),
                                         )
                                         .await;
-                                        
+
                                         let lock = state.0.history.lock().await;
-                                        let send_data = Data::playback(
+                                        let send_data = Data::room_joined(
                                             parsed.user.clone(),
-                                            room.id.clone(),
+                                            room.clone(),
                                             lock.get(&room.id).cloned(),
                                         );
-                                        drop(lock);
                                         broadcast_to_user(&parsed.user.id, send_data, &state).await;
+                                        drop(lock);
                                     }
 
                                     MessageEvents::RoomRemoved { room } => {
@@ -240,7 +244,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                             &state,
                                         )
                                         .await;
-                                        
+
                                         {
                                             let mut rooms = state.0.rooms.lock().await;
                                             let mut is_empty = false;
@@ -299,7 +303,10 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         .await;
                                     }
 
-                                    MessageEvents::PlayBack { room_id, history: _history } => {
+                                    MessageEvents::PlayBack {
+                                        room_id,
+                                        history: _history,
+                                    } => {
                                         let lock = state.0.history.lock().await;
                                         let send_data = Data::playback(
                                             parsed.user.clone(),
@@ -309,7 +316,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         drop(lock);
                                         broadcast_to_user(&parsed.user.id, send_data, &state).await;
                                     }
-                                    
+
                                     MessageEvents::RoomMembersCount { room_id, count } => {
                                         let send_data = Data::room_members_count(
                                             parsed.user.clone(),
@@ -317,7 +324,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                             count,
                                         );
                                         broadcast_in_room(room_id, send_data, &state, None).await;
-                                    }                                    
+                                    }
                                 }
                             }
                         }
