@@ -121,6 +121,10 @@ pub enum MessageEvents {
         room_id: String,
         history: Option<Vec<HistoryEvent>>,
     },
+    RoomMembersCount {
+        room_id: String,
+        count: u32,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -288,6 +292,16 @@ impl Data {
             user,
         }
     }
+    
+    pub fn room_members_count(user: User, room_id: String, count: u32) -> Self {
+        Self {
+            key: GlobalEvents::Message,
+            value: Some(DataValue {
+                events: MessageEvents::RoomMembersCount { room_id, count },
+            }),
+            user,
+        }
+    }    
 
     pub fn convert(self) -> Message {
         let utf8 = Utf8Bytes::from(serde_json::to_string(&self).expect("Parsing Fail"));

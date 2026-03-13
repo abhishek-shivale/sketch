@@ -309,6 +309,15 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         drop(lock);
                                         broadcast_to_user(&parsed.user.id, send_data, &state).await;
                                     }
+                                    
+                                    MessageEvents::RoomMembersCount { room_id, count } => {
+                                        let send_data = Data::room_members_count(
+                                            parsed.user.clone(),
+                                            room_id.clone(),
+                                            count,
+                                        );
+                                        broadcast_in_room(room_id, send_data, &state, None).await;
+                                    }                                    
                                 }
                             }
                         }
