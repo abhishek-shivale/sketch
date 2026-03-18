@@ -175,5 +175,4 @@ public/       — built frontend static files (not in this repo)
 - **No persistence** — state is lost on restart
 - **No heartbeat** — dead sockets are only detected on the next failed write
 - **History grows unboundedly** — no rolling time window implemented yet
-- **No CORS layer** — add `CorsLayer::permissive()` in `main.rs` when running the dev frontend on a different port than 3000
 - **`RoomCreated` does not authoritatively add the creator as a member** — the creator must also send `RoomJoined`

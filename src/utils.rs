@@ -304,7 +304,7 @@ impl Data {
         }
     }    
 
-    pub fn convert(self) -> Message {
+    pub fn convert(&self) -> Message {
         let utf8 = Utf8Bytes::from(serde_json::to_string(&self).expect("Parsing Fail"));
         Message::Text(utf8)
     }
