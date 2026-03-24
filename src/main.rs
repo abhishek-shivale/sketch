@@ -1,8 +1,8 @@
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 
 use axum::{
     Router,
-    extract::{State, WebSocketUpgrade},
+    extract::{State, WebSocketUpgrade, rejection::FailedToDeserializeQueryString},
     response::{IntoResponse, Response},
     routing::{any, get},
 };
@@ -78,31 +78,22 @@ async fn main() {
                 .collect();
 
             for (room_id, deleted_ids) in work {
-                for id in &deleted_ids {
-                    let id_str = id.to_string();
-                    if let Some(value) = h_lock.get_mut(&room_id) {
-                        let to_remove: Vec<usize> = value
-                            .iter()
-                            .enumerate()
-                            .filter_map(|(i, x)| {
-                                x.event_data
-                                    .value
-                                    .as_ref()
-                                    .and_then(|data| match &data.events {
-                                        MessageEvents::CanvasAdd { action }
-                                            if action.id == id_str =>
-                                        {
-                                            Some(i)
-                                        }
-                                        _ => None,
-                                    })
-                            })
-                            .collect();
-
-                        for &i in to_remove.iter().rev() {
-                            value.remove(i);
+                let set: HashSet<Uuid> = deleted_ids.into_iter().collect();
+                if let Some(value) = h_lock.get_mut(&room_id) {
+                    value.retain(|e| {
+                        if let Some(data) = e.event_data.value.as_ref() {
+                            match &data.events {
+                                MessageEvents::CanvasAdd { action } => {
+                                    Uuid::parse_str(action.id.as_str())
+                                        .map(|id| !set.contains(&id))
+                                        .unwrap_or(true)
+                                }
+                                _ => true,
+                            }
+                        } else {
+                            true
                         }
-                    }
+                    });
                 }
             }
         }
