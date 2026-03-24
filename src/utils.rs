@@ -37,7 +37,7 @@ pub enum Tools {
 pub struct Action {
     color: String,
     fill_color: String,
-    id: String,
+    pub id: String,
     opacity: i8,
     points: Vec<Point>,
     size: i8,
