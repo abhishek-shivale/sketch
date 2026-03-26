@@ -293,7 +293,7 @@ impl Data {
             user,
         }
     }
-    
+
     pub fn room_members_count(user: User, room_id: String, count: u32) -> Self {
         Self {
             key: GlobalEvents::Message,
@@ -302,7 +302,7 @@ impl Data {
             }),
             user,
         }
-    }    
+    }
 
     pub fn convert(&self) -> Message {
         let utf8 = Utf8Bytes::from(serde_json::to_string(&self).expect("Parsing Fail"));

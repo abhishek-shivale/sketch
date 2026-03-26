@@ -1,19 +1,27 @@
+use std::{sync::Arc, time::Duration};
+
 use crate::{
     state::{AppState, HistoryEvent},
     utils::{Data, EventKind, GlobalEvents, MessageEvents, SenderType},
 };
 use axum::extract::{
     State,
-    ws::{Message, WebSocket},
+    ws::{Message, Utf8Bytes, WebSocket},
 };
 use chrono::Utc;
 use futures_util::{SinkExt, StreamExt};
+use tokio::{
+    self,
+    sync::{Mutex, watch},
+    time::Instant,
+};
 use uuid::Uuid;
 
 pub async fn interact(socket: WebSocket, state: State<AppState>) {
     let (mut sender, mut receiver) = socket.split();
     let key = Uuid::new_v4();
     let mut map = state.0.users.lock().await;
+    let (tx, mut rx) = watch::channel(false);
     if !map.contains_key(&key) {
         {
             let send_data = Data::connected(key);
@@ -22,6 +30,37 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
         map.insert(key, sender);
     }
     drop(map);
+
+    let last_pong = Arc::new(Mutex::new(Instant::now()));
+    let last_pong_clone = last_pong.clone();
+    let users = Arc::clone(&state.0.users);
+    let users_cleanup = Arc::clone(&state.0.users);
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(30));
+
+        loop {
+            tokio::select! {
+                _ = interval.tick() => {
+                                let elapsed = last_pong_clone.lock().await.elapsed();
+                                if elapsed > Duration::from_secs(60) {
+                                    users_cleanup.lock().await.remove(&key);
+                                    break;
+                                }
+
+                                let mut map = users.lock().await;
+                                if let Some(sender) = map.get_mut(&key) {
+                                    if sender.send(Message::Ping(vec![].into())).await.is_err() {
+                                        break;
+                                    }
+                                } else {
+                                    break;
+                                }
+                }
+                _ = rx.changed() => break,
+
+            }
+        }
+    });
 
     while let Some(msg) = receiver.next().await {
         match msg {
@@ -184,7 +223,6 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                         room,
                                         history: _history,
                                     } => {
-                                        // User Join the room
                                         let user_id = parsed.user.id;
                                         let room_id = room.id.clone();
 
@@ -329,14 +367,24 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                     }
                 };
             }
+            Ok(Message::Pong(_)) => {
+                *last_pong.lock().await = Instant::now();
+            }
+
             Ok(Message::Close(_)) => {
                 state.0.users.lock().await.remove(&key);
+                break;
             }
-            Err(e) => eprintln!("Somthing went wrong!!!, {}", e),
+
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                break;
+            }
             _ => {}
         }
     }
 
+    let _ = tx.send(true);
     clean_up(key, &state).await;
 }
 

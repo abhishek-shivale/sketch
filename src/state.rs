@@ -2,11 +2,8 @@ use axum::extract::ws::{Message, WebSocket};
 use chrono::{DateTime, Utc};
 use futures_util::stream::SplitSink;
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
-use std::{
-    collections::HashMap,
-    sync::{Arc},
-};
 use uuid::Uuid;
 
 use crate::utils::{Data, EventKind, Room};
@@ -33,8 +30,6 @@ pub struct HistoryEvent {
     pub event_data: Data,
     pub event_room: String,
 }
-
-
 
 impl AppState {
     pub fn new() -> Self {

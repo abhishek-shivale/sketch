@@ -1,12 +1,11 @@
-use std::{collections::HashSet, time::Duration};
-
 use axum::{
     Router,
-    extract::{State, WebSocketUpgrade, rejection::FailedToDeserializeQueryString},
+    extract::{State, WebSocketUpgrade},
     response::{IntoResponse, Response},
     routing::{any, get},
 };
 use chrono::{TimeDelta, Utc};
+use std::collections::HashSet;
 use tokio::{self};
 use tower_http::cors::CorsLayer;
 use tower_http::services::{ServeDir, ServeFile};
