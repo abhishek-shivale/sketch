@@ -6,7 +6,7 @@ use crate::{
 };
 use axum::extract::{
     State,
-    ws::{Message, Utf8Bytes, WebSocket},
+    ws::{Message, WebSocket},
 };
 use chrono::Utc;
 use futures_util::{SinkExt, StreamExt};
@@ -240,7 +240,7 @@ pub async fn interact(socket: WebSocket, state: State<AppState>) {
                                                 .or_insert(room.clone());
 
                                             if !curr_room.members.contains(&user_id) {
-                                                curr_room.members.push(user_id);
+                                                curr_room.members.insert(user_id);
                                             }
                                         }
 
@@ -495,7 +495,7 @@ async fn clean_up(user_id: Uuid, state: &State<AppState>) {
         let mut is_empty = false;
 
         if let Some(room) = rooms.get_mut(&room_id) {
-            room.members.retain_mut(|id| id != &user_id);
+            room.members.retain(|id| id != &user_id);
             is_empty = room.members.is_empty();
         }
 

@@ -1,3 +1,5 @@
+use std::{collections::HashSet, hash::Hash};
+
 use crate::state::HistoryEvent;
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use chrono::{DateTime, Utc};
@@ -53,7 +55,7 @@ pub struct Action {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Room {
     pub id: String,
-    pub members: Vec<Uuid>,
+    pub members: HashSet<Uuid>,
     pub created_by: String,
 }
 
