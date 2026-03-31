@@ -173,6 +173,3 @@ public/       — built frontend static files (not in this repo)
 ## Known limitations / pending
 
 - **No persistence** — state is lost on restart
-- **No heartbeat** — dead sockets are only detected on the next failed write
-- **History grows unboundedly** — no rolling time window implemented yet
-- **`RoomCreated` does not authoritatively add the creator as a member** — the creator must also send `RoomJoined`
