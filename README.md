@@ -2,6 +2,8 @@
 
 Real-time collaborative drawing server built with Rust, Axum, and Tokio. The frontend is a static build served from the `public/` directory.
 
+![SketchSync preview](https://res.cloudinary.com/dygubvmg6/image/upload/v1785202553/ChatGPT_Image_Jul_28_2026_07_05_44_AM_pf8dei.png)
+
 ## Stack
 
 - **[Axum](https://github.com/tokio-rs/axum)** — HTTP + WebSocket server
