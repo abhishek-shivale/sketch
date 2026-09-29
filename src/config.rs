@@ -50,7 +50,7 @@ impl Default for Config {
             heartbeat_interval: Duration::from_secs(30),
             heartbeat_timeout: Duration::from_secs(75),
             send_queue: 512,
-            max_message_bytes: 4 * 1024 * 1024,
+            max_message_bytes: 16 * 1024 * 1024,
             rate_per_sec: 120,
             rate_burst: 240,
             max_rooms: 10_000,
