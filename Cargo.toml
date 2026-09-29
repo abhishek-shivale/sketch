@@ -1,35 +1,14 @@
 [package]
 name = "sketch"
-version = "0.2.0"
+version = "0.1.0"
 edition = "2024"
 
-[lib]
-path = "src/lib.rs"
-
-[[bin]]
-name = "sketch"
-path = "src/main.rs"
-
 [dependencies]
-axum = { version = "0.8.8", features = ["ws"] }
+axum = {version = "0.8.8", features=["ws"]}
 chrono = { version = "0.4.44", features = ["serde"] }
-dashmap = "6"
 futures-util = "0.3.32"
-indexmap = "2"
-parking_lot = "0.12"
-serde = { version = "1.0.228", features = ["derive", "rc"] }
+serde = {version = "1.0.228", features=["derive"]}
 serde_json = "1.0.149"
-thiserror = "2"
-tokio = { version = "1.49.0", features = ["full"] }
-tokio-util = "0.7"
-tower-http = { version = "0.6.8", features = ["fs", "cors", "trace"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tokio = {version = "1.49.0", features=["full"]}
+tower-http = {version= "0.6.8", features=["fs", "cors"]}
 uuid = { version = "1.22.0", features = ["v4", "serde"] }
-
-[dev-dependencies]
-tokio-tungstenite = "0.28"
-
-[profile.release]
-lto = "thin"
-codegen-units = 1
