@@ -1,5 +1,12 @@
 # Make `sketch` a codebase to be proud of
 
+> **Status (see `ARCHITECTURE.md`):** Phases 0–4 done, Phase 5.1–5.4 done,
+> Phase 6 done (unit + `tests/ws.rs` integration tests). History went
+> further than 1.2/3 proposed: it is compacted per shape instead of capped.
+> The `macro_rules!` idea in Phase 2 was dropped: splitting inbound and
+> outbound types removed the duplication it was meant to hide.
+> Still open: 5.5 room access tokens, and the optional proc-macro stretch.
+
 ## Context
 
 `sketch` is a real-time collaborative drawing server (Axum + Tokio + WebSocket,
