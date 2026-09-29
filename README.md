@@ -55,7 +55,7 @@ values stop the server with an error naming the variable.
 | `SKETCH_HEARTBEAT_TIMEOUT_SECS` | `75` | Silence before a client is dropped |
 | `SKETCH_SEND_QUEUE` | `512` | Outbound messages buffered per client before it is dropped as too slow |
 | `SKETCH_MAX_MESSAGE_BYTES` | `16777216` | Largest accepted WebSocket message (images are sent inline as data URLs) |
-| `SKETCH_RATE_PER_SEC` / `SKETCH_RATE_BURST` | `120` / `240` | Per-connection message rate limit |
+| `SKETCH_RATE_PER_SEC` / `SKETCH_RATE_BURST` | `300` / `600` | Per-connection message rate limit (drags send a move per mousemove) |
 | `SKETCH_MAX_ROOMS` | `10000` | Rooms held in memory |
 | `SKETCH_ROOM_MAX_SHAPES` | `5000` | Shapes kept in one room's history |
 | `SKETCH_ROOM_MAX_BYTES` | `33554432` | Approximate history bytes per room |
