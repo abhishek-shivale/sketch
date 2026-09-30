@@ -97,11 +97,10 @@ async fn main() {
             }
         }
     });
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
-        .await
-        .unwrap();
+    let addr = std::env::var("BIND").unwrap_or_else(|_| "127.0.0.1:3000".into());
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
-    println!("Server Started on http://localhost:3000");
+    println!("Server Started on http://{addr}");
     axum::serve(listener, app).await.unwrap();
 }
 
