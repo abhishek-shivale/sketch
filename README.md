@@ -47,7 +47,7 @@ values stop the server with an error naming the variable.
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
-| `SKETCH_ADDR` | `127.0.0.1:3000` | Listen address |
+| `SKETCH_ADDR` (or `BIND`) | `127.0.0.1:3000` | Listen address (the Docker image sets `BIND=0.0.0.0:3000`) |
 | `SKETCH_PUBLIC_DIR` | `public` | Built frontend directory |
 | `SKETCH_WORKER_THREADS` | one per core | Tokio worker threads |
 | `SKETCH_CORS_ORIGINS` | any origin | Comma separated allow-list |

@@ -6,7 +6,7 @@ use crate::error::ConfigError;
 /// environment variable; see [`Config::from_env`].
 #[derive(Debug, Clone)]
 pub struct Config {
-    /// `SKETCH_ADDR`: socket address to listen on.
+    /// `SKETCH_ADDR` (or legacy `BIND`): socket address to listen on.
     pub addr: SocketAddr,
     /// `SKETCH_PUBLIC_DIR`: directory with the built frontend.
     pub public_dir: PathBuf,
@@ -74,7 +74,11 @@ impl Config {
             |var, default: Duration| parse(&get, var, default.as_secs()).map(Duration::from_secs);
 
         let config = Self {
-            addr: parse(&get, "SKETCH_ADDR", d.addr)?,
+            // `BIND` is the older name, still used by the Dockerfile.
+            addr: match get("SKETCH_ADDR") {
+                Some(v) => parse_value("SKETCH_ADDR", &v)?,
+                None => parse(&get, "BIND", d.addr)?,
+            },
             public_dir: get("SKETCH_PUBLIC_DIR").map_or(d.public_dir, PathBuf::from),
             worker_threads: match get("SKETCH_WORKER_THREADS") {
                 Some(v) => Some(parse_value("SKETCH_WORKER_THREADS", &v)?),
@@ -210,6 +214,13 @@ mod tests {
         assert_eq!(config.cors_origins, ["https://a.dev", "https://b.dev"]);
         assert_eq!(config.room_idle_ttl, Duration::from_secs(5));
         assert_eq!(config.worker_threads, Some(4));
+    }
+
+    #[test]
+    fn legacy_bind_is_a_fallback_for_addr() {
+        assert_eq!(from(&[("BIND", "0.0.0.0:4000")]).unwrap().addr.port(), 4000);
+        let both = from(&[("BIND", "0.0.0.0:4000"), ("SKETCH_ADDR", "0.0.0.0:5000")]).unwrap();
+        assert_eq!(both.addr.port(), 5000);
     }
 
     #[test]
