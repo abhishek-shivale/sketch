@@ -19,11 +19,19 @@ jobs:
       - name: Update Rust toolchain
         run: |
           . $HOME/.cargo/env
-            rustup update stable
+          rustup update stable
+          rustup component add rustfmt clippy
+
+      - name: Check
+        run: |
+          . $HOME/.cargo/env
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
 
       - name: Build release
         run: |
-          . $HOME/.cargo/env 
+          . $HOME/.cargo/env
           cargo build --release
 
       - name: Stop service
